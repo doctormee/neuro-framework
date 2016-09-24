@@ -34,6 +34,7 @@ public:
 /* this is a main Net class, which is a neuro-net 
 it should provide proper interface
 */ 
+
 /*
 class Net{
     List <node> input_layer, output_layer;
