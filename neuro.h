@@ -13,6 +13,7 @@ template <class T>
 struct List{
     T *elem;
     List *next;
+    List();
     List( T *init );
     ~List();
     void link( T *piece ); // links *piece at the end of a list 
@@ -35,12 +36,12 @@ public:
 it should provide proper interface
 */ 
 
-/*
+
 class Net{
-    List <node> input_layer, output_layer;
-    List <Layer> hidden_layers;
+    List <Node> input_layer, output_layer;
+    List <List <Node> > hidden_layers;
 public:
-*/
+    
 };
 /* this section is solely for defining Edge methods */
 Edge::Edge( Node *t, Node *f, double w ){
@@ -56,6 +57,11 @@ Edge::~Edge(){
     w = 0;
 }
 /* this section is solely for defining List methods */
+template <class T>
+List<T>::List(){
+    next = nullptr;
+    elem = nullptr;
+}
 template <class T>
 List<T>::List( T *init ){
     next = nullptr;
