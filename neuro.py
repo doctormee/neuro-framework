@@ -187,7 +187,7 @@ net.dump_nodes()
 # def __init__(self, hidden_layer_count, input_node_count, hidden_node_count,\
 #  output_node_count, hidden_activation_function, output_activation_function):
 
-#print(hidden.activation_value)
+#print(hidden.activation_value) azazaz
 
 
 
