@@ -46,7 +46,6 @@ it should provide proper interface
 class Net{
     List <Node> input_layer, output_layer;
     List <List <Node> > hidden_layers;
-    List <Edge> edges;
 public:
     Net( int hidden_layer_count, int input_node_count, int hidden_node_count, int output_node_count, 
     double ( *hidden_activation_function)( double ), double ( *output_activation_function)( double ) ); //net constructior
@@ -105,47 +104,40 @@ Node::Node( double ( *func )( double ) ){
 Net::Net( int hidden_layer_count, int input_node_count, int hidden_node_count, int output_node_count, 
 double ( *hidden_activation_function)( double ), double ( *output_activation_function)( double ) ){
     srand( time( nullptr ) );
-    //initializing input_layer
+    //initializing input_layer with new Nodes
     while ( input_node_count-- ){
         input_layer.append( new Node );
     }
-    //initializing all hidden layers
     int nodes_left;
-    List <Node> *hidden_layer;
-    List <Node> *link_layer = &input_layer; 
-    Node *new_node, *link_node;
-    List <List <Node> > *prev_hidden_layer = nullptr; 
-    while ( hidden_layer_count-- ){
+    List <Node> *hidden_layer; //new hidden layer, later set to be appended at the end of hidden_layers
+    List <Node> *link_layer = &input_layer;  //previous layer
+    List <Node> *current_link_layer; //current position at lik_layer for each new node
+    Node *new_node; //our new node
+    Edge *e; //a dummy edge ptr to create edges
+    while ( hidden_layer_count-- ){     //initializing all hidden layers    
         hidden_layer = new List;
         nodes_left = hidden_node_count;
-        while ( nodes_left-- ){
+        while ( nodes_left-- ){        //initializing a new hidden layer
+            current_link_layer = link_layer;
             new_node = new Node( hidden_activation_function );
             *hidden_layer.append( new_node );
-            link_node = *link_layer.elem;
-            while ( link_node != nullptr ){
-                edges.append( new Edge( link_node, new_node, rand() % 200 - 100 ) ); //initializes a random-weighted ( -100 -- 100 ) edge between link_node and new_node
-                link_node = *link_layer.next;
-            }
+            while ( current_link_layer != nullptr ){
+                e = new Edge( *current_link_layer.elem, new_node, rand() % 200 - 100 ); //initializes a random-weighted ( -100 -- 100 ) edge between link_node and new_node
+                current_link_layer = *current_link_layer.next;
+                }
         }
         //and finally append our new initialized and linked layer to the hidden_layers
         hidden_layers.append( *hidden_layer );
-        //finding the next link_layer might be tricky
-        if ( prev_hidden_layer == nullptr ){
-            prev_hidden_layer = &hidden_layers; 
-        }
-        else{
-            prev_hidden_layer = *prev_hidden_layer.next; 
-        }
-        //yet we set it here
-        link_layer = *prev_hidden_layer.elem; 
+        //finding the next link_layer
+        link_layer = hidden_layer; 
     }
     while ( output_node_count-- ){
+        current_link_layer = link_layer;
         new_node = new Node( output_activation_function );
         output_layer.append( new_node );
-        link_node = *link_layer.elem;
-        while ( link_node != nullptr ){
-            edges.append( new Edge( link_node, new_node, rand() % 200 - 100 ) ); //initializes a random-weighted ( -100 -- 100 ) edge between link_node and new_node
-            link_node = *link_layer.next;
+        while ( current_link_layer != nullptr ){
+            e = new Edge( *current_link_layer.elem, new_node, rand() % 200 - 100 ); //initializes a random-weighted ( -100 -- 100 ) edge between link_node and new_node
+            current_link_layer = *current_link_layer.next;
         }
     }
 }
