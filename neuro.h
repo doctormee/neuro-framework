@@ -5,6 +5,12 @@
 double sgn(double val) {
     return double ( ( 0 < val ) - ( val < 0 ) );
 }
+double inp_func( double val ){
+    return val;
+}
+double inp_deriv( double val ){
+    return 1;
+}
 class Node;
 /* this is an Edge struct (which is equal to a public class)
 It stores index and destination Node pointers and a weight of an edge
@@ -64,7 +70,7 @@ class Node{
     double activation_value; //output value
     double ( *activation_function )( double ); //pointer to the activation function
     double ( *activation_function_derivative )( double ); //pointer to the activation function's first derivative
-    static double computing_function( List <Edge>  ); //computing function, is static for all nodes and (in our scenario) is a weighted sum
+    double computing_function( List <Edge>  ); //computing function in our scenario is a weighted sum
     // enum n_type{ input, hidden, output, bias }
 public:
     List <Edge> input_list, output_list; //these are two Edge lists storing all edges going in and out of the node
@@ -72,9 +78,9 @@ public:
     Node(){ activation_value = 0; activation_function = sgn; activation_function_derivative = 0; delta = 0;} //simple constructor, used for making a Bias
     Node( double ( *func )( double ), double ( *deriv )( double ) );
     void activate() { activation_value = activation_function( computing_function( input_list ) ); } //calculates and sets a proper output value 
-    double get_derivative_value() const { return activation_function_derivative( computing_function( input_list ) ); }
+    double get_derivative_value() { return activation_function_derivative( computing_function( input_list ) ); }
     void set_activation_value( double x ) { activation_value = x; } // setter
-    double get_activation_value() const { return activation_value; } // getter
+    double get_activation_value() { return activation_value; } // getter
 };
 /* this is a main Net class, which is a neuro-net 
 it should provide proper interface
@@ -101,8 +107,10 @@ Edge::Edge( Node *f, Node *t, double w ){
     to = t;
     from = f;
     weight = w;
-    f->output_list.append( this );
-    t->input_list.append( this );
+    if ( f != nullptr )
+        f->output_list.append( this );
+    if ( t != nullptr )
+        t->input_list.append( this );
 }
 /* this section is solely for defining List methods */
 template <class T>
@@ -139,11 +147,12 @@ List<T>::~List(){
 /* this section is solely for defining Node methods */
 double Node::computing_function( List <Edge> inp ){
     double val = 0;
-    while ( inp.next != nullptr ){
+    while ( ( inp.next != nullptr ) && ( inp.elem != nullptr ) ){
         val = val + ( inp.elem->from->get_activation_value() * inp.elem->weight ); 
         inp = *( inp.next );
     }
-    val += inp.elem->from->get_activation_value() * inp.elem->weight;
+    if ( inp.elem != nullptr )
+        val += inp.elem->from->get_activation_value() * inp.elem->weight;
     //std::cout << val << '\n';
     return val;
 }
@@ -159,7 +168,7 @@ double ( *hidden_activation_function)( double ), double ( *hidden_activation_fun
     srand( time( nullptr ) );
     //initializing input_layer with new Nodes
     while ( input_node_count-- ){
-        input_layer.append( new Node );
+        input_layer.append( new Node( inp_func, inp_deriv ) );
     }
     int nodes_left;
     List <Node> *hidden_layer; //new hidden layer, later set to be appended at the end of hidden_layers
@@ -167,32 +176,35 @@ double ( *hidden_activation_function)( double ), double ( *hidden_activation_fun
     List <Node> *current_link_layer; //current position at link_layer for each new node
     Node *new_node; //our new node
     Edge *e; //a dummy edge ptr to create edges
-    while ( hidden_layer_count-- ){     //initializing all hidden layers    
+    while ( hidden_layer_count > 0 ) {     //initializing all hidden layers    
         hidden_layer = new List <Node>;
         nodes_left = hidden_node_count;
-        while ( ( nodes_left-- ) && ( hidden_layer_count > 0 ) ){        //initializing a new hidden layer
+        while ( nodes_left > 0 ){        //initializing a new hidden layer
             current_link_layer = link_layer;
             new_node = new Node( hidden_activation_function, hidden_activation_function_derivative );
             hidden_layer->append( new_node );
             while ( current_link_layer != nullptr ){
-                e = new Edge( current_link_layer->elem, new_node, rand() % 100 ); //initializes a random-weighted ( -10 -- 10 ) edge between link_node and new_node
+                e = new Edge( current_link_layer->elem, new_node, rand() % 100 ); //initializes a random-weighted edge between link_node and new_node
                 current_link_layer = current_link_layer->next;
-                }
+            }
+            nodes_left--;
         } 
         //and finally append our new initialized and linked layer to the hidden_layers
         
         hidden_layers.append( hidden_layer );
         //finding the next link_layer
         link_layer = hidden_layer; 
+        hidden_layer_count--;
     }
-    while ( output_node_count-- ){
-        current_link_layer = link_layer;
+    while ( output_node_count > 0 ){
+        current_link_layer = link_layer; //link_layer still points at the last hidden layer
         new_node = new Node( output_activation_function, output_activation_function_derivative );
         output_layer.append( new_node );
         while ( ( current_link_layer != nullptr ) && ( current_link_layer->elem != nullptr ) ){
             e = new Edge( current_link_layer->elem, new_node, rand() % 100 ); //initializes a random-weighted ( -100 -- 100 ) edge between link_node and new_node
             current_link_layer = current_link_layer->next;
         }
+        --output_node_count;
     }
 }
 Net::~Net(){
