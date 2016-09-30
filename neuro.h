@@ -41,10 +41,15 @@ struct Dlist{
     }
     void append( double piece ){
         Dlist* temp = next;
-        while ( temp != nullptr ){
-            temp = temp->next;
+        if ( length == 0 ){
+            elem = piece;
         }
-        temp = new Dlist( piece );
+        else{
+            while ( temp != nullptr ){
+                temp = temp->next;
+            }
+            temp = new Dlist( piece );
+        }
         ++length;
     }
     ~Dlist(){
@@ -92,19 +97,19 @@ public:
 //
 //
 /* this section is solely for defining Edge methods */
-Edge::Edge( Node *f, Node *t, double w ){
+Edge::Edge( Node *f, Node *t, double w ){    
     to = t;
     from = f;
     weight = w;
-    from->output_list.append( this );
-    to->input_list.append( this );
+    f->output_list.append( this );
+    t->input_list.append( this );
 }
 /* this section is solely for defining List methods */
 template <class T>
 List<T>::List(){
     next = nullptr;
     elem = nullptr;
-    length = 1;
+    length = 0;
 }
 template <class T>
 List<T>::List( T *init ){
@@ -115,10 +120,15 @@ List<T>::List( T *init ){
 template <class T>
 void List<T>::append( T *piece ) {
     List<T>* temp = next;
-    while ( temp != nullptr ){
-        temp = temp->next;
+    if ( length == 0 ){
+        elem = piece;
     }
-    temp = new List( piece );
+    else{
+        while ( temp != nullptr ){
+            temp = temp->next;
+        }
+        temp = new List( piece );
+    }
     ++length;
 }
 template <class T>
@@ -134,6 +144,7 @@ double Node::computing_function( List <Edge> inp ){
         inp = *( inp.next );
     }
     val += inp.elem->from->get_activation_value() * inp.elem->weight;
+    //std::cout << val << '\n';
     return val;
 }
 Node::Node( double ( *func )( double ), double ( *deriv )( double ) ){
@@ -159,16 +170,17 @@ double ( *hidden_activation_function)( double ), double ( *hidden_activation_fun
     while ( hidden_layer_count-- ){     //initializing all hidden layers    
         hidden_layer = new List <Node>;
         nodes_left = hidden_node_count;
-        while ( nodes_left-- ){        //initializing a new hidden layer
+        while ( ( nodes_left-- ) && ( hidden_layer_count > 0 ) ){        //initializing a new hidden layer
             current_link_layer = link_layer;
             new_node = new Node( hidden_activation_function, hidden_activation_function_derivative );
             hidden_layer->append( new_node );
             while ( current_link_layer != nullptr ){
-                e = new Edge( current_link_layer->elem, new_node, rand() % 200 - 100 ); //initializes a random-weighted ( -100 -- 100 ) edge between link_node and new_node
+                e = new Edge( current_link_layer->elem, new_node, rand() % 100 ); //initializes a random-weighted ( -10 -- 10 ) edge between link_node and new_node
                 current_link_layer = current_link_layer->next;
                 }
-        }
+        } 
         //and finally append our new initialized and linked layer to the hidden_layers
+        
         hidden_layers.append( hidden_layer );
         //finding the next link_layer
         link_layer = hidden_layer; 
@@ -177,8 +189,8 @@ double ( *hidden_activation_function)( double ), double ( *hidden_activation_fun
         current_link_layer = link_layer;
         new_node = new Node( output_activation_function, output_activation_function_derivative );
         output_layer.append( new_node );
-        while ( current_link_layer != nullptr ){
-            e = new Edge( current_link_layer->elem, new_node, rand() % 200 - 100 ); //initializes a random-weighted ( -100 -- 100 ) edge between link_node and new_node
+        while ( ( current_link_layer != nullptr ) && ( current_link_layer->elem != nullptr ) ){
+            e = new Edge( current_link_layer->elem, new_node, rand() % 100 ); //initializes a random-weighted ( -100 -- 100 ) edge between link_node and new_node
             current_link_layer = current_link_layer->next;
         }
     }
@@ -275,7 +287,7 @@ void Net::back_propagate( Dlist input, Dlist ideal, double learning_rate, double
         while ( j-- ){
             i = j;
             hidden_layers_ptr = &hidden_layers;
-            while ( i-- ){
+            while ( ( --i ) && ( j > 0 ) ){
                 hidden_layers_ptr = hidden_layers_ptr->next;
             }
             current_layer_ptr = hidden_layers_ptr->elem;
